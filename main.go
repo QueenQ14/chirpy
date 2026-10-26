@@ -13,9 +13,9 @@ func main() {
 	apiCfg := apiConfig{}
 	handler := http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))
 	router.Handle("/app/", apiCfg.middlewareMetricsInc(handler))
-	router.HandleFunc("GET /metrics", apiCfg.fileserverHitCount)
-	router.HandleFunc("GET /healthz", healthCheck)
-	router.HandleFunc("POST /reset", apiCfg.hitcountReset)
+	router.HandleFunc("GET /admin/metrics", apiCfg.fileserverHitCount)
+	router.HandleFunc("GET /api/healthz", healthCheck)
+	router.HandleFunc("POST /admin/reset", apiCfg.hitcountReset)
 	server := http.Server{
 		Handler: router,
 		Addr:    ":" + port,
