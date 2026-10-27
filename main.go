@@ -36,7 +36,7 @@ func main() {
 	router.HandleFunc("GET /admin/metrics", apiCfg.fileserverHitCount)
 	router.HandleFunc("GET /api/healthz", healthCheck)
 	router.HandleFunc("POST /admin/reset", apiCfg.hitcountReset)
-	router.HandleFunc("/api/validate_chirp", validateChirp)
+	router.HandleFunc("POST /api/chirps", apiCfg.handleChirp)
 	router.HandleFunc("POST /api/users", apiCfg.createUser)
 	server := http.Server{
 		Handler: router,

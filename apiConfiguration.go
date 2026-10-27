@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -64,12 +65,7 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "there was an error decoding the request")
 		return
 	}
-	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
-		ID:        uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Email:     req.Email,
-	})
+	user, err := cfg.db.CreateUser(r.Context(), req.Email)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "error creating user")
 		return
@@ -81,4 +77,51 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, r *http.Request) {
 		Email:     user.Email,
 	}
 	respondWithJson(w, 201, res)
+}
+
+func (cfg *apiConfig) handleChirp(w http.ResponseWriter, r *http.Request) {
+	type request struct {
+		Body   string    `json:"body"`
+		UserID uuid.UUID `json:"user_id"`
+	}
+	type response struct {
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Body      string    `json:"body"`
+		UserID    uuid.UUID `json:"user_id"`
+	}
+	profaneWords := map[string]struct{}{"kerfuffle": {}, "sharbert": {}, "fornax": {}}
+	decoder := json.NewDecoder(r.Body)
+	req := request{}
+	if err := decoder.Decode(&req); err != nil {
+		respondWithError(w, http.StatusBadRequest, "there was an error decoding the request")
+		return
+	}
+	if len(req.Body) > 140 {
+		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
+	}
+	var tmpBody []string
+	for _, word := range strings.Fields(req.Body) {
+		if _, ok := profaneWords[strings.ToLower(word)]; !ok {
+			tmpBody = append(tmpBody, word)
+		} else {
+			tmpBody = append(tmpBody, "****")
+		}
+	}
+	filteredBody := strings.Join(tmpBody, " ")
+	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
+		Body:   filteredBody,
+		UserID: req.UserID,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error creating chirp")
+	}
+	respondWithJson(w, http.StatusCreated, response{
+		ID:        chirp.ID,
+		CreatedAt: chirp.CreatedAt,
+		UpdatedAt: chirp.UpdatedAt,
+		Body:      chirp.Body,
+		UserID:    chirp.UserID,
+	})
 }
