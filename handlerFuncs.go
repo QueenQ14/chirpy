@@ -23,7 +23,7 @@ func validateChirp(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	req := request{}
 	if err := decoder.Decode(&req); err != nil {
-		respondWithError(w, http.StatusInternalServerError, "there was an error decoding the request")
+		respondWithError(w, http.StatusBadRequest, "there was an error decoding the request")
 		return
 	}
 	if len(req.Body) <= 140 {
