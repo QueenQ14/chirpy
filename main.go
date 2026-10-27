@@ -41,6 +41,7 @@ func main() {
 	router.HandleFunc("GET /api/chirps", apiCfg.listChirps)
 	router.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.getChirpByID)
 	router.HandleFunc("POST /api/users", apiCfg.createUser)
+	router.HandleFunc("POST /api/login", apiCfg.handleLogin)
 	server := http.Server{
 		Handler: router,
 		Addr:    ":" + port,
