@@ -3,9 +3,22 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"sync/atomic"
 )
 
-func healthCheck(w http.ResponseWriter, req *http.Request) {
+type apiConfig struct {
+	fileserverHits atomic.Int32
+}
+
+func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cfg.fileserverHits.Add(1)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (cfg *apiConfig) hitcountReset(w http.ResponseWriter, req *http.Request) {
+	cfg.fileserverHits.Store(0)
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(http.StatusText(http.StatusOK)))
@@ -21,11 +34,4 @@ func (cfg *apiConfig) fileserverHitCount(w http.ResponseWriter, req *http.Reques
   </body>
 </html>`, cfg.fileserverHits.Load())
 	w.Write([]byte(data))
-}
-
-func (cfg *apiConfig) hitcountReset(w http.ResponseWriter, req *http.Request) {
-	cfg.fileserverHits.Store(0)
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(http.StatusText(http.StatusOK)))
 }

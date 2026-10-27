@@ -10,27 +10,17 @@ func main() {
 	const filepathRoot = "."
 	const port = "8080"
 	router := http.NewServeMux()
-	apiCfg := apiConfig{}
+	apiCfg := apiConfig{fileserverHits: atomic.Int32{}}
 	handler := http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))
 	router.Handle("/app/", apiCfg.middlewareMetricsInc(handler))
 	router.HandleFunc("GET /admin/metrics", apiCfg.fileserverHitCount)
 	router.HandleFunc("GET /api/healthz", healthCheck)
 	router.HandleFunc("POST /admin/reset", apiCfg.hitcountReset)
+	router.HandleFunc("/api/validate_chirp", validateChirp)
 	server := http.Server{
 		Handler: router,
 		Addr:    ":" + port,
 	}
 	log.Fatal(server.ListenAndServe())
 
-}
-
-type apiConfig struct {
-	fileserverHits atomic.Int32
-}
-
-func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cfg.fileserverHits.Add(1)
-		next.ServeHTTP(w, r)
-	})
 }
