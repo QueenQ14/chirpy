@@ -125,3 +125,57 @@ func (cfg *apiConfig) handleChirp(w http.ResponseWriter, r *http.Request) {
 		UserID:    chirp.UserID,
 	})
 }
+
+func (cfg *apiConfig) listChirps(w http.ResponseWriter, r *http.Request) {
+	type response struct {
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Body      string    `json:"body"`
+		UserID    uuid.UUID `json:"user_id"`
+	}
+	chirps, err := cfg.db.GetAllChirps(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error fetching chirps")
+	}
+	resp := []response{}
+	for _, chirp := range chirps {
+		resp = append(resp, response{
+			ID:        chirp.ID,
+			CreatedAt: chirp.CreatedAt,
+			UpdatedAt: chirp.UpdatedAt,
+			Body:      chirp.Body,
+			UserID:    chirp.UserID,
+		})
+	}
+	respondWithJson(w, http.StatusOK, resp)
+
+}
+
+func (cfg *apiConfig) getChirpByID(w http.ResponseWriter, r *http.Request) {
+	type response struct {
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Body      string    `json:"body"`
+		UserID    uuid.UUID `json:"user_id"`
+	}
+	chirpID := r.PathValue("chirpID")
+	id, err := uuid.Parse(chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "error parsing ID")
+		return
+	}
+	chirp, err := cfg.db.GetChirpByID(r.Context(), id)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "no chirp found")
+		return
+	}
+	respondWithJson(w, http.StatusOK, response{
+		ID:        chirp.ID,
+		CreatedAt: chirp.CreatedAt,
+		UpdatedAt: chirp.UpdatedAt,
+		Body:      chirp.Body,
+		UserID:    chirp.UserID,
+	})
+}

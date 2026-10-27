@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -37,11 +38,14 @@ func main() {
 	router.HandleFunc("GET /api/healthz", healthCheck)
 	router.HandleFunc("POST /admin/reset", apiCfg.hitcountReset)
 	router.HandleFunc("POST /api/chirps", apiCfg.handleChirp)
+	router.HandleFunc("GET /api/chirps", apiCfg.listChirps)
+	router.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.getChirpByID)
 	router.HandleFunc("POST /api/users", apiCfg.createUser)
 	server := http.Server{
 		Handler: router,
 		Addr:    ":" + port,
 	}
+	fmt.Println("The server has started...")
 	log.Fatal(server.ListenAndServe())
 
 }
