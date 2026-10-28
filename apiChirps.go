@@ -8,13 +8,13 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/QueenQ14/chirpy/internal/auth"
 	"github.com/QueenQ14/chirpy/internal/database"
 )
 
-func (cfg *apiConfig) handleChirp(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) postChirp(w http.ResponseWriter, r *http.Request) {
 	type request struct {
-		Body   string    `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
 	}
 	type response struct {
 		ID        uuid.UUID `json:"id"`
@@ -28,6 +28,16 @@ func (cfg *apiConfig) handleChirp(w http.ResponseWriter, r *http.Request) {
 	req := request{}
 	if err := decoder.Decode(&req); err != nil {
 		respondWithError(w, http.StatusBadRequest, "there was an error decoding the request")
+		return
+	}
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "failed to parse token")
+		return
+	}
+	userID, err := auth.ValidateJWT(token, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "failed to validate token")
 		return
 	}
 	if len(req.Body) > 140 {
@@ -44,7 +54,7 @@ func (cfg *apiConfig) handleChirp(w http.ResponseWriter, r *http.Request) {
 	filteredBody := strings.Join(tmpBody, " ")
 	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body:   filteredBody,
-		UserID: req.UserID,
+		UserID: userID,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "error creating chirp")

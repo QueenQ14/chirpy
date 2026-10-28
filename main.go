@@ -20,6 +20,10 @@ func main() {
 	if platform == "" {
 		log.Fatal("PLATFORM must be set in the environment")
 	}
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET must be set in the environment")
+	}
 	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
 		log.Fatal(err)
@@ -31,13 +35,14 @@ func main() {
 		fileserverHits: atomic.Int32{},
 		db:             database.New(db),
 		platform:       platform,
+		jwtSecret:      jwtSecret,
 	}
 	handler := http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))
 	router.Handle("/app/", apiCfg.middlewareMetricsInc(handler))
 	router.HandleFunc("GET /admin/metrics", apiCfg.fileserverHitCount)
 	router.HandleFunc("GET /api/healthz", healthCheck)
 	router.HandleFunc("POST /admin/reset", apiCfg.hitcountReset)
-	router.HandleFunc("POST /api/chirps", apiCfg.handleChirp)
+	router.HandleFunc("POST /api/chirps", apiCfg.postChirp)
 	router.HandleFunc("GET /api/chirps", apiCfg.listChirps)
 	router.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.getChirpByID)
 	router.HandleFunc("POST /api/users", apiCfg.createUser)
