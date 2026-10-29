@@ -51,6 +51,7 @@ func main() {
 	router.HandleFunc("POST /api/login", apiCfg.handleLogin)
 	router.HandleFunc("POST /api/refresh", apiCfg.refreshToken)
 	router.HandleFunc("POST /api/revoke", apiCfg.revokeToken)
+	router.HandleFunc("POST /api/polka/webhooks", apiCfg.upgradeUser)
 	server := http.Server{
 		Handler: router,
 		Addr:    ":" + port,
