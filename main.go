@@ -45,6 +45,7 @@ func main() {
 	router.HandleFunc("POST /api/chirps", apiCfg.postChirp)
 	router.HandleFunc("GET /api/chirps", apiCfg.listChirps)
 	router.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.getChirpByID)
+	router.HandleFunc("DELETE /api/chirps/{chirpID}", apiCfg.deleteChirp)
 	router.HandleFunc("POST /api/users", apiCfg.createUser)
 	router.HandleFunc("PUT /api/users", apiCfg.updateUser)
 	router.HandleFunc("POST /api/login", apiCfg.handleLogin)
