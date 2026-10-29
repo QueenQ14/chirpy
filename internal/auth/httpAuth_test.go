@@ -18,4 +18,15 @@ func TestGetBearerToken(t *testing.T) {
 	}
 }
 
-
+func TestGetAPIKey(t *testing.T) {
+	header := http.Header{}
+	header.Add("Authorization", "ApiKey meowmeow")
+	originalToken := "meowmeow"
+	token, err := GetAPIKey(header)
+	if err != nil {
+		t.Fatalf("error fetching token from header")
+	}
+	if token != originalToken {
+		t.Fatalf("ApiKey was not extracted correctly. Expected %v, got %v", originalToken, token)
+	}
+}

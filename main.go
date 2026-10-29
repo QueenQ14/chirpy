@@ -24,6 +24,10 @@ func main() {
 	if jwtSecret == "" {
 		log.Fatal("JWT_SECRET must be set in the environment")
 	}
+	polkaKey := os.Getenv("POLKA_KEY")
+	if polkaKey == "" {
+		log.Fatal("POLKA_KEY must be set in the environment")
+	}
 	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
 		log.Fatal(err)
@@ -36,6 +40,7 @@ func main() {
 		db:             database.New(db),
 		platform:       platform,
 		jwtSecret:      jwtSecret,
+		polkaKey:       polkaKey,
 	}
 	handler := http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))
 	router.Handle("/app/", apiCfg.middlewareMetricsInc(handler))

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/QueenQ14/chirpy/internal/auth"
 	"github.com/google/uuid"
 )
 
@@ -13,6 +14,11 @@ func (cfg *apiConfig) upgradeUser(w http.ResponseWriter, r *http.Request) {
 		Data  struct {
 			UserID uuid.UUID `json:"user_id"`
 		} `json:"data"`
+	}
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if err != nil || apiKey != cfg.polkaKey {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	}
 	decoder := json.NewDecoder(r.Body)
 	req := request{}
@@ -24,7 +30,7 @@ func (cfg *apiConfig) upgradeUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	err := cfg.db.UpdateUserStatusByID(r.Context(), req.Data.UserID)
+	err = cfg.db.UpdateUserStatusByID(r.Context(), req.Data.UserID)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 	}
