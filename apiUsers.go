@@ -49,6 +49,55 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, r *http.Request) {
 	respondWithJson(w, 201, res)
 }
 
+func (cfg *apiConfig) updateUser(w http.ResponseWriter, r *http.Request) {
+	type request struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	type response struct {
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+		Email     string    `json:"email"`
+	}
+	decoder := json.NewDecoder(r.Body)
+	var req request
+	if err := decoder.Decode(&req); err != nil {
+		respondWithError(w, http.StatusBadRequest, "error decoding request")
+		return
+	}
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "invalid token")
+		return
+	}
+	userID, err := auth.ValidateJWT(token, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "invalid token")
+		return
+	}
+	hashedPass, err := auth.HashPassword(req.Password)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error hashing password")
+		return
+	}
+	user, err := cfg.db.UpdateUserDetails(r.Context(), database.UpdateUserDetailsParams{
+		ID:             userID,
+		Email:          req.Email,
+		HashedPassword: hashedPass,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "error updating user")
+		return
+	}
+	respondWithJson(w, http.StatusOK, response{
+		ID:        user.ID,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		Email:     user.Email,
+	})
+}
+
 func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 	type request struct {
 		Email    string `json:"email"`
