@@ -76,9 +76,26 @@ func (cfg *apiConfig) listChirps(w http.ResponseWriter, r *http.Request) {
 		Body      string    `json:"body"`
 		UserID    uuid.UUID `json:"user_id"`
 	}
-	chirps, err := cfg.db.GetAllChirps(r.Context())
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "error fetching chirps")
+	authorID := r.URL.Query().Get("author_id")
+	var chirps []database.Chirp
+	var err error
+	if authorID != "" {
+		userID, err := uuid.Parse(authorID)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "invalid author ID")
+			return
+		}
+		chirps, err = cfg.db.GetAllChirpsByUserID(r.Context(), userID)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "error fetching chirps")
+			return
+		}
+	} else {
+		chirps, err = cfg.db.GetAllChirps(r.Context())
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "error fetching chirps")
+			return
+		}
 	}
 	resp := []response{}
 	for _, chirp := range chirps {
@@ -91,7 +108,6 @@ func (cfg *apiConfig) listChirps(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	respondWithJson(w, http.StatusOK, resp)
-
 }
 
 func (cfg *apiConfig) getChirpByID(w http.ResponseWriter, r *http.Request) {
